@@ -12,23 +12,30 @@ import { useHistory, useParams } from "react-router-dom";
 import { info } from "daisyui/colors/colorNames";
 import { amazonUpload } from "../utils/amazonUpload";
 import TabViewComponent from "../components/TabViewComponent";
-
+import jsPDF from "jspdf";
+import pdfMake from "pdfmake";
+import pdfFonts from "pdfmake/build/vfs_fonts";
+import htmlToPdfmake from "html-to-pdfmake";
+import customSortFunction from "../utils/arrays";
 function ViewForm(props) {
-  const printDocument= (e) => {
+  const myRef = React.useRef(null);
+  const printDocument = (e) => {
     //const input = document.getElementById('divToPrint');
-  window.print()
-        // const doc = new jsPDF();
-       
-        // //get table html
-        // const pdfTable = document.getElementById('divToPrint');
-        // //html to pdf format
-        // var html = htmlToPdfmake(pdfTable.innerHTML);
-      
-        // const documentDefinition = { content: html };
-        // pdfMake.vfs = pdfFonts.pdfMake.vfs;
-        // pdfMake.createPdf(documentDefinition).open();
-      
-  }
+    setShow(false);
+    window.print();
+    setTimeout(() => {
+      setShow(true)
+    }, 1000);
+    // const doc = new jsPDF();
+
+    // //get table html
+    // //html to pdf format
+    // var html = htmlToPdfmake(pdfTable.innerHTML);
+
+    // const documentDefinition = { content: html };
+    // pdfMake.vfs = pdfFonts.pdfMake.vfs;
+    // pdfMake.createPdf(documentDefinition).open();
+  };
 
   const location = useLocation();
   // const { form_id } = location.state;
@@ -46,6 +53,7 @@ function ViewForm(props) {
   const [formId, setFormId] = React.useState(0);
 
   const [response, setResponse] = React.useState(null);
+  const [show, setShow] = React.useState(true);
 
   let form_id = useParams().id;
 
@@ -95,77 +103,30 @@ function ViewForm(props) {
     });
   }, []);
 
-  const onSubmit = (e) => {
-    e.preventDefault();
-    setTabsImage({});
-    editFormPost(data, formId, tabsImage).then((res) => {
-      setResponse(res);
-      setFormId(res.FormId);
-      let resp = res.FormValues.sort((a, b) => a.ParamOrder - b.ParamOrder);
-      setData(resp.map((item) => ({ ...item, Value: "No" })));
-      let obj = groupBy(resp, "Phase");
-      setObject(obj);
-
-      let structures = {};
-      res.StructureTypes.map((str, index) => {
-        let newArr = [];
-        str.Calculations.map((item) => {
-          newArr.push({
-            Phase: item.Phase,
-            ParameterTypeId: item.ParameterTypeId,
-            ParameterId: item.ParameterId,
-            ParameterName: item.ParameterName,
-            value: item.value,
-          });
-        });
-        structures[str.StructureType] = groupBy(newArr, "Phase");
-        structures[str.StructureType].StructureImages = [];
-        let imgs = tabsImage;
-        let imagesArrayFromResponse = res.StructureImages.map((item) => ({
-          ...item,
-          structure_type_id: item.structure_type_id.replace(/['"]+/g, ""),
-        }));
-        imgs[str.StructureType] = imagesArrayFromResponse.filter(
-          (item) => item.structure_type_id === str.StructureType
-        );
-        imgs[str.StructureType] = imgs[str.StructureType].map((item) => ({
-          ...item,
-          image_url: item.image_url.replace(/['"]+/g, ""),
-          image_type: item.image_type.replace(/['"]+/g, ""),
-        }));
-        setTabsImage(imgs);
-        console.log(imgs[str.StructureType]);
-      });
-      setTabs(structures);
-      setActive(Object.keys(structures)[0]);
-
-      setSubmit(true);
-      document.getElementById("collapseADD").classList.toggle("collapse");
-    });
-  };
-
-  if (!(object && data)) return <div />;
+  if (!(object && data)) return <Loader />;
   else
     return (
       <Layout title="View Property" subtitle="View Properties">
         <div className="page-wrapper">
           <div className="container">
-            <div style={{ margin: "1%" }} className="text-right">
-              <button
-                onClick={() => history.goBack()}
-                class="btn-lg btn btn-secondary mb-12 "
-              >
-                <span class="fa fa-list"> Properties List</span>
-              </button>
-              <button
-                style={{ margin:"1%",padding: '9px' }}
-                class=" btn btn-primary mb-12 "
-                onClick={printDocument}
-              >
-                <span class="fa fa-download"> Download PDF</span>
-              </button>
-            </div>
-            <div class="col-sm-12 col-md-12 col-lg-12  ">
+            {show && (
+              <div style={{ margin: "1%" }} className="text-right">
+                <button
+                  onClick={() => history.goBack()}
+                  class="btn-lg btn btn-secondary mb-12 "
+                >
+                  <span class="fa fa-list"> Properties List</span>
+                </button>
+                <button
+                  style={{ margin: "1%", padding: "9px" }}
+                  class=" btn btn-primary mb-12 "
+                  onClick={printDocument}
+                >
+                  <span class="fa fa-download"> Download PDF</span>
+                </button>
+              </div>
+            )}
+            <div ref={myRef} class="col-sm-12 col-md-12 col-lg-12  ">
               <form id="accordion" class=" white-box mb-30">
                 <div
                   style={{ backgroundColor: "#f67828", padding: "10px" }}
@@ -180,10 +141,8 @@ function ViewForm(props) {
                     data-target="#collapseADD"
                     aria-controls="collapseADD"
                   >
-                   Property Form
+                    Property Form
                   </button>
-                  
-
                 </div>
                 <div
                   id="collapseADD"
@@ -212,39 +171,37 @@ function ViewForm(props) {
                 </div>
               </form>
 
-              {submit && (
-                <div class="" role="group">
-                  {Object.entries(tabs).map((itemArr, index) => {
-                    return (
-                      <div className="white-box mb-30"  >
-                        <p
-                          style={{
-                            color: "white",
-                           
-                            backgroundColor: "#f67828", padding: "10px"
-                          }}
-                         
-                        >
-                          {itemArr[0]}
-                        </p>
-                      
-                        {Object.keys(itemArr[1]).map((item, index) => (
-                          <TabViewComponent
-                            key={JSON.stringify(tabsImage) + index.toString()}
-                            name={item}
-                            object={tabs[active]}
-                            index={index}
-                            useVals={true}
-                            setTabsImage={setTabsImage}
-                            tabsImage={tabsImage}
-                            active={active}
-                          />
-                        ))}
-                        </div>
-                    );
-                  })}
-                </div>
-              )}
+              <div class="" role="group">
+                {Object.entries(tabs).map((itemArr, index) => {
+                  return (
+                    <div className="white-box mb-30">
+                      <p
+                        style={{
+                          color: "white",
+
+                          backgroundColor: "#f67828",
+                          padding: "10px",
+                        }}
+                      >
+                        {itemArr[0]}
+                      </p>
+
+                      {customSortFunction(Object.keys(itemArr[1])).map((item, index) => (
+                        <TabViewComponent
+                          key={JSON.stringify(tabsImage) + index.toString()}
+                          name={item}
+                          object={itemArr[1]}
+                          index={index}
+                          useVals={true}
+                          setTabsImage={setTabsImage}
+                          tabsImage={tabsImage}
+                          active={itemArr[0]}
+                        />
+                      ))}
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           </div>
         </div>
@@ -253,5 +210,3 @@ function ViewForm(props) {
 }
 
 export default ViewForm;
-
-

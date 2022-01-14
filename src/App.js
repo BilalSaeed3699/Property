@@ -13,6 +13,7 @@ import pdfMake from 'pdfmake';
 import pdfFonts from 'pdfmake/build/vfs_fonts';
 import htmlToPdfmake from 'html-to-pdfmake';
 import Pdf from "./pages/Pdf";
+import { Delete } from "@material-ui/icons";
 function checkUser() {
   let user = Cookies.get("username");
   console.log(user);
@@ -50,6 +51,7 @@ function App() {
               <Route exact path="/main" component={Main} />
               <Route exact path="/form/:id" component={Form} />
               <Route exact path="/view/:id" component={ViewForm} />
+              <Route exact path="/delete/:id" component={Delete} />
               <Route exact path="/form" component={Form} />
               <Route exact path="/add-form" component={AddForm} />
               <Route exact path="/Pdf" component={Pdf} />

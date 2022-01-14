@@ -6,15 +6,16 @@ import TabComponent from "../components/TabComponent";
 import Components from "../services/Components";
 import { getParams, getParamsData } from "../services/City";
 import Loader from "../components/Loader";
-import { addFormPost } from "../services/Form";
+import { addFormPost, editFormPost } from "../services/Form";
 import { useHistory } from "react-router-dom";
 import { info } from "daisyui/colors/colorNames";
 import { amazonUpload } from "../utils/amazonUpload";
+import customSortFunction from "../utils/arrays";
 
 function AddForm(props) {
   const history = useHistory();
   const [object, setObject] = React.useState(null);
-  const [loading, setLoading] = React.useState(false)
+  const [loading, setLoading] = React.useState(false);
   const [tabs, setTabs] = React.useState([]);
   const [tabsImage, setTabsImage] = React.useState({});
 
@@ -38,8 +39,11 @@ function AddForm(props) {
   const onSubmit = (e) => {
     setLoading(true);
     e.preventDefault();
+
     addFormPost(data, formId, tabsImage).then((res) => {
       setResponse(res);
+
+      console.log(res);
       setFormId(res.FormId);
       let structures = {};
       res.StructureTypes.map((str, index) => {
@@ -51,6 +55,8 @@ function AddForm(props) {
             ParameterId: item.ParameterId,
             ParameterName: item.ParameterName,
             value: item.value,
+            ischecked: false,
+            structureType: str.StructureType,
           });
         });
         structures[str.StructureType] = groupBy(newArr, "Phase");
@@ -89,6 +95,8 @@ function AddForm(props) {
         setTabsImage(imgs);
       });
       setTabs(structures);
+      console.log("MeraData", data);
+      console.log("Myphase",structures)
       setActive(Object.keys(structures)[0]);
 
       setSubmit(true);
@@ -99,18 +107,55 @@ function AddForm(props) {
   const onSubmit1 = (e) => {
     setLoading(true);
     e.preventDefault();
-    addFormPost(data, formId, tabsImage).then((res) => {
+    setTabsImage({})
+
+    
+    editFormPost(data, formId, tabsImage,tabs).then((res) => {
       setResponse(res);
       setFormId(res.FormId);
+      console.log("Mera response123", res);
+      let resp = res.FormValues.sort((a, b) => a.ParamOrder - b.ParamOrder);
+      setData(resp.map((item) => ({ ...item, Value: item.value })));
+      let obj = groupBy(resp, "Phase");
+      setObject(obj);
+      console.log("Mera data", data);
+      let structures = {};
+      res.StructureTypes.map((str, index) => {
+        let newArr = [];
+        str.Calculations.map((item) => {
+          newArr.push({
+            Phase: item.Phase,
+            ParameterTypeId: item.ParameterTypeId,
+            ParameterId: item.ParameterId,
+            ParameterName: item.ParameterName,
+            value: item.value,
+            ischecked: item.ischecked,
+            structureType: str.StructureType,
+          });
+        });
+        structures[str.StructureType] = groupBy(newArr, "Phase");
+        structures[str.StructureType].StructureImages = [];
+        let imgs = tabsImage;
+        let imagesArrayFromResponse = res.StructureImages.map((item) => ({
+          ...item,
+          structure_type_id: item.structure_type_id.replace(/['"]+/g, ''),
+        }));
+        imgs[str.StructureType] = imagesArrayFromResponse.filter(
+          (item) => item.structure_type_id === str.StructureType
+        );
+        imgs[str.StructureType] = imgs[str.StructureType].map(item => ({...item,image_url: item.image_url.replace(/['"]+/g, ''),image_type: item.image_type.replace(/['"]+/g, '')}))
+        setTabsImage(imgs);
+        console.log(imgs[str.StructureType]);
+
+      });
+      console.log("MeraData", data);
+      console.log("Myphase",structures)
+      setTabs(structures);
+      setActive(Object.keys(structures)[0]);
+
       setSubmit(true);
-     
- 
-    
-      getParams(JSON.parse(Cookies.get("city")).CityId).then(data => {
-          setLoading(false)
-          history.push('/main', { data })
-      })
-     
+      setLoading(false);
+      document.getElementById("collapseADD").classList.toggle("collapse");
     });
   };
   if (object == null) return <Loader />;
@@ -158,16 +203,42 @@ function AddForm(props) {
                       <div class="flex row px-4 py-4 align-items-center ">
                         {object &&
                           object[name].map((item) =>
-                            Components(item, data, setData)
+                            Components(item, data, setData, true)
                           )}
                       </div>
                     </div>
                   );
                 })}
-                <button class="btn btn-secondary text-right" onClick={onSubmit}>
-                {loading && <span class="spinner-border spinner-border-sm mr-2" role="status" aria-hidden="true"></span>}
-                  Calculate
-                </button>
+                {/* {!submit && (
+                  <button
+                    class="btn btn-secondary text-right"
+                    onClick={onSubmit}
+                  >
+                    {loading && (
+                      <span
+                        class="spinner-border spinner-border-sm mr-2"
+                        role="status"
+                        aria-hidden="true"
+                      ></span>
+                    )}
+                    Calculate
+                  </button>
+                )} */}
+                 {
+                  <button
+                    class="btn btn-secondary text-right"
+                    onClick={onSubmit}
+                  >
+                    {loading && (
+                      <span
+                        class="spinner-border spinner-border-sm mr-2"
+                        role="status"
+                        aria-hidden="true"
+                      ></span>
+                    )}
+                    Calculate
+                  </button>
+                }
               </div>
             </form>
 
@@ -191,22 +262,36 @@ function AddForm(props) {
                 </div>
 
                 <div className="accordion" id="accordionExample">
-                  {Object.keys(tabs[active]).map((item, index) => {
-                    return (
-                      <>
-                        <TabComponent
-                          key={JSON.stringify(tabsImage) + index.toString()}
-                          name={item}
-                          object={tabs[active]}
-                          index={index}
-                          useVals={true}
-                          setTabsImage={setTabsImage}
-                          tabsImage={tabsImage}
-                          active={active}
-                        />
-                      </>
-                    );
-                  })}
+                  {customSortFunction(Object.keys(tabs[active])).map(
+                    (item, index) => {
+                      return (
+                        <>
+                          <TabComponent
+                            key={JSON.stringify(tabsImage) + index.toString()}
+                            name={item}
+                            object={tabs[active]}
+                            index={index}
+                            useVals={true}
+                            setTabsImage={setTabsImage}
+                            tabsImage={tabsImage}
+                            active={active}
+                            setObject2={(data) => {
+                              console.log(data);
+                              let t = tabs;
+                              tabs[data.structureType][data.Phase] = tabs[
+                                data.structureType
+                              ][data.Phase].map((item) =>
+                                item.ParameterId === data.ParameterId
+                                  ? data
+                                  : item
+                              );
+                              setTabs(t);
+                            }}
+                          />
+                        </>
+                      );
+                    }
+                  )}
                 </div>
 
                 <div className="flex row p-3 align-items-end justify-content-end">
@@ -220,8 +305,15 @@ function AddForm(props) {
                     //     .classList.toggle("collapse");
                     // }}
                     onClick={onSubmit1}
+                    disabled={loading}
                   >
-                     {loading && <span class="spinner-border spinner-border-sm mr-2" role="status" aria-hidden="true"></span>}
+                    {loading && (
+                      <span
+                        class="spinner-border spinner-border-sm mr-2"
+                        role="status"
+                        aria-hidden="true"
+                      ></span>
+                    )}
                     Submit
                   </button>
                 </div>

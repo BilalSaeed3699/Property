@@ -14,7 +14,7 @@ function TabViewComponent({
 }) {
   // object[name].where iamage_type == amazon pe image uplaod ki hai
   const [images, setImages] = React.useState(null);
-
+  console.log("main  ",object)
   React.useEffect(() => {
     setImages(tabsImage[active]);
   }, [tabsImage[active]]);

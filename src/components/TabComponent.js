@@ -11,6 +11,7 @@ function TabComponent({
   tabsImage,
   active,
   setTabsImage,
+  setObject2
 }) {
   // object[name].where iamage_type == amazon pe image uplaod ki hai
   const [images, setImages] = React.useState(null);
@@ -54,13 +55,17 @@ function TabComponent({
       {name !== "StructureImages" ? (
         <div
           id={`collapse${index}`}
-          class="my-4 accordion-collapse collapse show"
+          class="my-4 accordion-collapse collapse"
           aria-labelledby="headingOne"
           data-bs-parent="#accordionExample"
         >
           <div class="flex row px-4 py-4 align-items-center ">
+            
             {object &&
-              object[name].map((item) => Components(item, null, null, useVals))}
+              object[name].map((item) => Components(item, object[name], setObject2, useVals))
+              
+              
+              }
           </div>
         </div>
       ) : (
@@ -100,6 +105,7 @@ function TabComponent({
             ))}
         </div>
       )}
+      
     </div>
   );
 }

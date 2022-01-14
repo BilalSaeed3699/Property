@@ -12,7 +12,7 @@ function Footer() {
                             <div class="col-md-12 col-lg-12">
                                 <div class="copyright-text">
                                     <p class="mb-0">
-                                        &copy; 2021 All Rights Reserved by eazisols.
+                                        &copy; 2022 All Rights Reserved by Hardy Investments, LLC.
                                     </p>
                                 </div>
                             </div>

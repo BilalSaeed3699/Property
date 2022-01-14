@@ -19,11 +19,15 @@ const MultiToggleField = React.memo((props) => {
   }, []);
 
   const onChange = (e) => {
-    console.log(props.data);
-    console.log(e);
-    let arr;
+
+    setValue(e)
+    let arr = "";
+    console.log("I am executed")
     e.map((item) => {
-      arr = arr + "," + item.value;
+      if (arr != "")
+        arr = arr + "," + item.value;
+      else
+        arr= item.value
     });
     props.setData(
       props.data.map((item2) => {
@@ -32,7 +36,8 @@ const MultiToggleField = React.memo((props) => {
           : item2;
       })
     );
-    console.log(props.data);
+    
+    // console.log(props.data);
     //console.log(props.data.find((item) => item.ParameterId == props.id))
   };
 

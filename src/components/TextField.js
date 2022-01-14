@@ -7,9 +7,9 @@ import { getParamsData } from "../services/City";
 function TextField(props) {
   const [value, setValue] = React.useState(null);
   React.useEffect(() => {
-    console.log("Props. value", props.value);
+    console.log("Props. value", props);
     if (props.value) {
-      setValue(props.value.slice(1, props.value.length - 1));
+      setValue(props.value);
     }
   }, []);
 
@@ -22,6 +22,7 @@ function TextField(props) {
           : item;
       })
     );
+ 
     console.log(props.data.find((item) => item.ParameterId == props.id));
   };
   return (

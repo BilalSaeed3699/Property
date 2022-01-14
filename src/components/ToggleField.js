@@ -8,7 +8,7 @@ function ToggleField(props) {
     //   setValue(res[0].Value);
     // });
     if (props.value) {
-      console.log("There is a value in props");
+     
       let val = props.value.slice(1, props.value.length - 1);
       setValue(val === "Yes" ? "checked" : "");
     }
@@ -16,6 +16,7 @@ function ToggleField(props) {
 
   const onChange = (e) => {
     setValue(e.target.checked);
+    console.log("Heee",e.target.checked);
     props.setData(
       props.data.map((item) => {
         return item.ParameterId === props.id
@@ -23,6 +24,7 @@ function ToggleField(props) {
           : item;
       })
     );
+    console.log(props.data.find((item) => item.ParameterId == props.id));
   };
   return (
     <div class="col-md-4">

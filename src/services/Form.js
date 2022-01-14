@@ -4,6 +4,8 @@ import { getParamsData } from "./City";
 import { response } from "../utils/sampleresponse";
 const GetURL =
   "https://u0yo62ijdc.execute-api.us-west-2.amazonaws.com/DEV/get-form-values";
+const DelURL =
+  "https://u0yo62ijdc.execute-api.us-west-2.amazonaws.com/DEV/delete";
 
 const URL =
   "https://u0yo62ijdc.execute-api.us-west-2.amazonaws.com/DEV/singlefamily";
@@ -16,7 +18,7 @@ export async function addFormPost(arr, formId, imageArr = null) {
     parameters: [],
     // StructureImages: [],
   };
-
+  console.log("Form", arr);
   let Arr = [];
   arr.map(async (item) => {
     Arr.push({
@@ -35,7 +37,8 @@ export async function addFormPost(arr, formId, imageArr = null) {
     });
     params.StructureImages = arr;
   }
-  console.log(params);
+  params.StructureTypes=[];
+  console.log("fff", params);
   params = JSON.stringify({
     Body: params,
   });
@@ -59,7 +62,7 @@ export async function addFormPost(arr, formId, imageArr = null) {
     });
 }
 
-export async function editFormPost(arr, formId, imageArr = null) {
+export async function editFormPost(arr, formId, imageArr = null, tabs = null) {
   let params = {
     formId: formId,
     username: Cookies.get("username"),
@@ -73,7 +76,7 @@ export async function editFormPost(arr, formId, imageArr = null) {
     Arr.push({
       ParameterId: item.ParameterId,
       ParameterName: item.ParameterName,
-      value: item.value.replace(/['"]+/g, ""),
+      value: item.Value.replace(/['"]+/g, ""),
     });
   });
   params.parameters = Arr;
@@ -86,7 +89,34 @@ export async function editFormPost(arr, formId, imageArr = null) {
     });
     params.StructureImages = arr;
   }
+
+  if (tabs) {
+    console.log(tabs);
+    params.StructureTypes = Object.entries(tabs).map((item) => {
+      let keysArr = Object.keys(item[1]);
+      let arr = [];
+      keysArr.forEach((key, index) => {
+        arr = arr.concat(
+          item[1][key].map((item) => ({
+            ParameterId: item.ParameterId.toString(),
+            ParameterName: item.ParameterName,
+            value: item.value,
+            ischecked:item.ischecked,
+            
+          }))
+        );
+      });
+      return {
+        StructureType: item[0],
+        Calculations: arr,
+      };
+    });
+  }
+  else{
+    params.StructureTypes=[]
+  }
   console.log(params);
+
   params = JSON.stringify({
     Body: params,
   });
@@ -119,6 +149,29 @@ export async function getFormData(form_id) {
   });
   return axios
     .post(GetURL, params, {
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+      crossorigin: true,
+    })
+    .then((res) => {
+      return res.data;
+    })
+    .catch((e) => {
+      alert(e.message);
+    });
+}
+
+export async function deleteFormData(form_id) {
+  let params = {
+    FormId: form_id,
+  };
+  params = JSON.stringify({
+    Body: params,
+  });
+  return axios
+    .post(DelURL, params, {
       headers: {
         "Content-Type": "application/json",
         Accept: "application/json",
